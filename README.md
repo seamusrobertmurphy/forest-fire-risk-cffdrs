@@ -1,6 +1,6 @@
 ### CFFDRS 2.0: Canadian Wildfire Risk Mapping
 
-^Seamus Murphy, 2022-02-24^
+Murphy, S 2022-02-24
 
 ------------------------------------------------------------------------
 
