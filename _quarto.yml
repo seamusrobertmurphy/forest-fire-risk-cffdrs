@@ -1,0 +1,43 @@
+project:
+  type: website
+
+website:
+  title: "CFFDRS 2.0: Canadian Forest Fire Danger Rating System"
+  navbar:
+    title: "Forest Fire & Fuel Type Mapping"
+    search: true
+    left:
+      - href: index.qmd
+        text: Home
+      - about.qmd
+    tools:
+      - icon: github
+        menu:
+          - text: Source Code
+            href: https://github.com/seamusrobertmurphy/wildfire-risk-mapping-cffdrs
+          - text: Report a Bug
+            href: https://github.com/seamusrobertmurphy/wildfire-risk-mapping-cffdrs/issues
+          - text: Repo Collection
+            href: https://github.com/seamusrobertmurphy/
+      - icon: linkedin
+        href: https://linkedin.com/in/seamusrobertmurphy
+      - icon: '<i class="academicons--google-scholar"></i>'
+        href: https://scholar.google.com/citations?hl=en&user=jDGq9I4AAAAJ
+
+  sidebar:
+      pinned: true
+      style: "docked"
+      collapse-level: 1
+      contents:
+        - text: "CFFDRS Template"
+          href: index.qmd      
+        - section: "About"
+          contents:
+            - text: "Bio"
+              href: about.qmd
+            - text: "Teaching"
+              href: teaching/index.qmd
+
+format:
+  html:
+    theme: [cosmo, styles.scss]
