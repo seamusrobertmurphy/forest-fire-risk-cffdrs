@@ -53,7 +53,7 @@ tmap::tm_shape(aoi) + tmap::tm_borders(col="purple", lwd=2) +
   tmap::tm_basemap("Esri.WorldImagery") 
 ```
 
-![](![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/aoi-watershed-map.png)
+![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/aoi-watershed-map.png)
 
 #### Import DEM Data
 
@@ -98,7 +98,7 @@ tmap::tm_shape(elev)+ tm_raster(style= "cont", title="Elevation ASL", palette="v
   tmap::tm_basemap("Esri.WorldImagery") 
 ```
 
-![](assets/PNG/elevation-covariates.png)
+![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/elevation-covariates.png)
 
 #### Import Climate Data
 
@@ -257,10 +257,10 @@ tmap::tm_shape(ws) + tm_raster(col.legend = tm_legend(
   tmap::tm_graticules(lines=T,labels.rot=c(0,90),lwd=0.2)
 ```
 
-|                          |                        |
-|--------------------------|------------------------|
-| ![](assets/PNG/temp.png) | ![](assets/PNG/rh.png) |
-| ![](assets/PNG/prec.png) | ![](assets/PNG/ws.png) |
+|  |  |
+|-------------------------------------|-----------------------------------|
+| ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/temp.png) | ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/rh.png) |
+| ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/prec.png) | ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/ws.png) |
 
 ## 3. Results
 
@@ -365,11 +365,11 @@ tmap::tm_shape(Wotton_fuel_MW) + tm_polygons(fill = "blue", lwd=0)
 tmap::tm_shape(Wotton_fuel_SP) + tm_polygons(fill = "darkgreen", lwd=0)
 ```
 
-|                                    |                                    |
+|  |  |
 |------------------------------------|------------------------------------|
-| ![](assets/PNG/wooton-fuel-n.png)  | ![](assets/PNG/wotton-fuel-pi.png) |
-| ![](assets/PNG/wotton-fuel-hw.png) | ![](assets/PNG/wotton-fuel-df.png) |
-| ![](assets/PNG/wotton-fuel-mw.png) | ![](assets/PNG/wotton-fuel-sp.png) |
+| ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/wooton-fuel-n.png) | ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/wotton-fuel-pi.png) |
+| ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/wotton-fuel-hw.png) | ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/wotton-fuel-df.png) |
+| ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/wotton-fuel-mw.png) | ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/wotton-fuel-sp.png) |
 
 #### Derive Fire Weather Maps
 
@@ -395,10 +395,10 @@ fwi_outputs = cffdrs::fwiRaster(stack, out = "all")
 terra::writeRaster(fwi_outputs, "./assets/TIF/fwi_outputs.tif", overwrite=T)
 ```
 
-|                          |                         |                         |
+|  |  |  |
 |-------------------------|------------------------|------------------------|
-| ![](assets/PNG/ffmc.png) | ![](assets/PNG/dmc.png) | ![](assets/PNG/dc.png)  |
-| ![](assets/PNG/isi.png)  | ![](assets/PNG/bui.png) | ![](assets/PNG/fwi.png) |
+| ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/ffmc.png) | ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/dmc.png) | ![](assets/PNG/dc.png) |
+| ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/isi.png) | ![](assets/PNG/bui.png) | ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/fwi.png) |
 
 ```{r}
 #| warning: false
