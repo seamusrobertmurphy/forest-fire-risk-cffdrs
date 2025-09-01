@@ -1,10 +1,10 @@
 ### CFFDRS 2.0: Canadian Wildfire Risk Mapping
 
-Murphy, S 2022-02-24
-
-------------------------------------------------------------------------
+###### ***Murphy, S 2024-02-24***
 
 ###### ***Reproducible pipeline for deriving CFFDRS-compliant fire behavior metrics in British Columbia's Okanagan Watershed***
+
+------------------------------------------------------------------------
 
 This report documents development of wildfire risk mapping and behavior prediction metrics in accordance with the Canadian Forest Fire Danger Rating System (V2.0). Leveraging the new `cffdrs` package and the release of the updated Fire Danger Rating System framework\](<https://cwfis.cfs.nrcan.gc.ca/background/dsm/fbp>), the following demonstrates a reproducible and technically aligned workflow to data acquisition, spatial covariate processing, including satellite-derived elevation, gridded climate data, and vegetation inventories, to produce fire behavior outputs. The methodology is designed to support the needs of fire managers, researchers, and wildfire operational teams by providing robust estimates of current day fire environment. This markdown was originally commissioned for preparation of submission to the [Innovative Solutions Canada](https://www.ic.gc.ca/eic/site/101.nsf/eng/00157.html) grant funding and was since updated with releases of new input data.
 
@@ -396,7 +396,7 @@ terra::writeRaster(fwi_outputs, "./assets/TIF/fwi_outputs.tif", overwrite=T)
 ```
 
 |                          |                         |                         |
-|--------------------------|-------------------------|-------------------------|
+|-------------------------|------------------------|------------------------|
 | ![](assets/PNG/ffmc.png) | ![](assets/PNG/dmc.png) | ![](assets/PNG/dc.png)  |
 | ![](assets/PNG/isi.png)  | ![](assets/PNG/bui.png) | ![](assets/PNG/fwi.png) |
 
