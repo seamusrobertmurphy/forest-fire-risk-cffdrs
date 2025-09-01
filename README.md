@@ -53,7 +53,7 @@ tmap::tm_shape(aoi) + tmap::tm_borders(col="purple", lwd=2) +
   tmap::tm_basemap("Esri.WorldImagery") 
 ```
 
-![](assets/PNG/aoi-watershed-map.png)
+![](![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/aoi-watershed-map.png)
 
 #### Import DEM Data
 
