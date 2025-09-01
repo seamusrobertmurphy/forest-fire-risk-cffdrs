@@ -1,15 +1,3 @@
----
-editor_options: 
-  markdown: 
-    wrap: 100
-    
-toc: true
-toc: true
-toc-title: "**Contents**"
-toc-depth: 4
-toc-expand: 4
----
-
 ### CFFDRS 2.0: Canadian Wildfire Risk Mapping
 
 ^Seamus Murphy, 2022-02-24^
