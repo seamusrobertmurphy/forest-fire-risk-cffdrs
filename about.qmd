@@ -19,6 +19,8 @@ about:
 editor: 
   markdown: 
     wrap: 80
+css: styles/academicons--google-scholar.css
+
 ---
 
 ::: {#hero-heading}

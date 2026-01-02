@@ -20,3 +20,6 @@ renv.lock
 
 *.pdf
 *.gdb.zip
+*.shp
+*.dbf
+

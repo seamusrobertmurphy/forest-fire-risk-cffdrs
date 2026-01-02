@@ -1,0 +1,6 @@
+
+
+exclude:
+  - "assets/VRI/"
+  - "assets/TIF/"
+  - "*.zip"

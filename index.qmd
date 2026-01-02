@@ -1,13 +1,13 @@
 ---
-title: "CFFDRS 2.0: Canadian WildFire Risk Mapping"
-subtitle: "Reproducible pipeline for deriving CFFDRS-compliant fire behavior metrics in British Columbia's Okanagan Watershed"
+title: "CFFDRS 2.0: Canadian Forest Fire Danger Rating System Updated"
+subtitle: "Reproducible pipeline for forest fuel typing and fire risk metrics in British Columbia's Okanagan Watershed in accordance with updated CFFDRS V2.0"
 date: 2022-02-24
 author: 
   - name: Seamus Murphy
     orcid: 0000-0002-1792-0351 
     email: seamusrobertmurphy@gmail.com
 abstract: > 
-  This report documents development of wildfire risk mapping and behavior prediction metrics in accordance with the Canadian Forest Fire Danger Rating System (V2.0). Leveraging the new `cffdrs` package and the release of the updated Fire Danger Rating System framework](https://cwfis.cfs.nrcan.gc.ca/background/dsm/fbp), the following demonstrates a reproducible and technically aligned workflow to data acquisition, spatial covariate processing, including satellite-derived elevation, gridded climate data, and vegetation inventories, to produce fire behavior outputs. The methodology is designed to support the needs of fire managers, researchers, andwildfire operational teams by providing robust estimates of current day fire environment. This markdown was originally commissioned for preparation of submission to the [Innovative Solutions Canada](https://www.ic.gc.ca/eic/site/101.nsf/eng/00157.html) grant funding and was since updated with releases of new input data.
+  This report documents development of wildfire risk mapping and behavior prediction metrics in accordance with the Canadian Forest Fire Danger Rating System (V2.0). Leveraging the new `cffdrs` package and the release of the updated [Fire Danger Rating System framework](https://cwfis.cfs.nrcan.gc.ca/background/dsm/fbp), the following demonstrates a reproducible and technically aligned workflow to data acquisition, spatial covariate processing, including satellite-derived elevation, gridded climate data, and vegetation inventories, to produce fire behavior outputs. The methodology is designed to support the needs of fire managers, researchers, andwildfire operational teams by providing robust estimates of current day fire environment. This markdown was originally commissioned for preparation of submission to the [Innovative Solutions Canada](https://www.ic.gc.ca/eic/site/101.nsf/eng/00157.html) grant funding and was since updated with releases of new input data.
 keywords:
   - Wildfire Risk
   - Fuel Typing
@@ -20,7 +20,7 @@ format:
     toc-depth: 5
     toc-expand: 4
     theme: [minimal, styles.scss]
-    embed-resources: true
+    embed-resources: false
 highlight-style: github
 df-print: kable
 bibliography: references.bib
@@ -50,8 +50,8 @@ pacman::p_load(
   "mapedit",
   "ncdf4",
   "openxlsx","OpenStreetMap", "osmdata",
-  "PROJ",
-  "raster", "rasterVis", "reproj", "rmapshaper", "renv",
+  "pandoc", "pandocfilters", "PROJ",
+  "raster", "rasterVis", "reproj", "rmapshaper", "renv", "rmarkdown",
   "sf",
   "tinytex", "tmap", "tmaptools", "terra", "tmap.networks", "tmap.glyphs", "tmap.cartogram",
   "useful", "usethis", 
@@ -71,7 +71,10 @@ sf::sf_use_s2(use_s2 = FALSE)
 options(htmltools.dir.version = FALSE, 
         htmltools.preserve.raw = FALSE)
 tmap_options(max.raster = c(plot = 9500000, view = 10000000)) # allows large raster rendering
-renv::init()
+#renv::init()
+#renv::restore()
+#renv::install(c("knitr", "rmarkdown"))
+#renv::snapshot()
 ```
 
 ```{css, echo=FALSE, class.source = 'foldable', eval=F}
@@ -141,8 +144,7 @@ sf::st_write(aoi, "./assets/SHP/aoi_watershed.shp")
 tmap::tmap_mode("view")
 tmap::tm_shape(aoi) + tmap::tm_borders(col="purple", lwd=2) +
   tmap::tm_scalebar(position=c("RIGHT", "BOTTOM"), text.size = .5) +
-  tmap::tm_title("AOI Waterhsed", size=.8) + 
-  tmap::tm_basemap("Esri.WorldImagery") 
+  tmap::tm_title("AOI Waterhsed", size=.8) 
 ```
 
 ```{r}
@@ -158,11 +160,11 @@ aoi = sf::st_read("./assets/SHP/aoi_watershed.shp", quiet=T)
 tmap::tmap_mode("view")
 tmap::tm_shape(aoi) + tmap::tm_borders(col="purple", lwd=2) +
   tmap::tm_scalebar(position=c("RIGHT", "BOTTOM"), text.size = .5) +
-  tmap::tm_title("AOI Waterhsed", size=.8) + 
+  tmap::tm_title("AOI Waterhsed", size=.8)
   #tmap::tm_compass(color.dark="gray60",text.color="gray60",position=c("RIGHT","top"))+
   #tmap::tm_graticules(lines=T,labels.rot=c(0,90),lwd=0.2) +
   #tmap::tm_layout(legend.position=c("left", "top"), legend.bg.color = "white") +
-  tmap::tm_basemap("Esri.WorldImagery") 
+  #tmap::tm_basemap("Esri.WorldImagery") 
   #tmap::tm_basemap("OpenStreetMap") 
   #tmap::tm_basemap("OpenTopoMap") 
 ```
@@ -210,8 +212,10 @@ raster::writeRaster(slope, "./assets/TIF/slope.tif", overwrite=T)
 raster::writeRaster(aspect, "./assets/TIF/aspect.tif", overwrite=T)
 
 
-tmap::tm_shape(elev)+ tm_raster(style= "cont", title="Elevation ASL", palette="viridis")+
-  tmap::tm_shape(slope)+ tm_raster(style= "cont", title="Slope", palette="Oranges") +
+tmap::tm_shape(elev)+ tm_raster(
+	style= "cont", title="Elevation ASL", palette="viridis")+
+  tmap::tm_shape(slope)+ tm_raster(
+  	style= "cont", title="Slope", palette="Oranges") +
   tmap::tm_shape(aoi)+ tm_borders(col="purple", lwd = 2) +
   tmap::tm_compass(type = "8star", position = c("left", "top")) +
   tmap::tm_scale_bar(c(0, 10, 20, 40), position = c("RIGHT", "BOTTOM"), text.size = .5) +
@@ -225,7 +229,7 @@ tmap::tm_shape(elev)+ tm_raster(style= "cont", title="Elevation ASL", palette="v
 #| error: false
 #| comment: NA
 #| echo: false
-#| eval: true
+#| eval: false
 elev  = terra::rast("./assets/TIF/elevation.tif")
 slope = terra::rast("./assets/TIF/slope.tif")
 aspect = terra::rast("./assets/TIF/aspect.tif")
@@ -239,6 +243,8 @@ tmap::tm_shape(elev)+ tm_raster(style= "cont", title="Elevation ASL", palette="v
   tmap::tm_basemap("Esri.WorldImagery") 
 
 ```
+
+![](assets/PNG/elevation-covariates.png)
 
 #### Import Climate Data
 
@@ -414,7 +420,7 @@ tmap::tm_shape(ws)+ tm_raster(style= "cont",
 #| error: false
 #| comment: NA
 #| echo: false
-#| eval: true
+#| eval: false
 
 # Specific ordering is required by ccfdrs pkg
 temp  = terra::rast("./assets/TIF/temp.tif")[[1]]
@@ -441,6 +447,12 @@ tmap::tm_shape(temp)+ tm_raster(style= "cont",
   tmap::tm_graticules(lines=T,labels.rot=c(0,90),lwd=0.2) +
   tmap::tm_scale_bar(c(0, 10, 20, 40), position = c("RIGHT", "BOTTOM"), text.size = .5) 
 ```
+
++:-----------------------------------------------------------------------------------------------------------------------:+:---------------------------------------------------------------------------------------------------------------------:+
+| ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/temp.png){width="345"} | ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/rh.png){width="345"} |
++-------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------+
+| ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/prec.png){width="345"} | ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/ws.png){width="345"} |
++-------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------+
 
 ## 3. Results
 
@@ -489,7 +501,7 @@ print(as_tibble(test_fwi), n = 10)
 print(as_tibble(test_fbp), n = 10)
 ```
 
-Wotton and Beverly's model of stand-adjusted fine fuel moisture content requires five predictor variables [@wotton2007stand]. Two of these predictors were extracted from the the VRI dataset including stand type (`SPEC_CD_1`) and stand density (`LIVE_STEMS`). Rough scale criteria were used in a filtering process to classify fuel categories similar to those used in Wotton and Beverley's model [@wotton2007stand] and more recent workflows [@perrakis2018british].
+Wotton and Beverly's model of stand-adjusted fine fuel moisture content requires five predictor variables [@wotton2007stand]. Two of these predictors were extracted from the the VRI dataset including stand type (`SPEC_CD_1`) and stand density (`LIVE_STEMS`). Rough scale criteria were used in a filtering process to classify fuel categories similar to those used in Wotton and Beverley's model [@wotton2007stand] and more recent workflows[^1] [@perrakis2018british].
 
 ```{r}
 #| warning: false
@@ -511,10 +523,6 @@ vri = st_read("./assets/VRI/vri_2022_3857.shp", quiet=T) |>
     "BEC_ZONE_C", 
     "VRI_LIVE_S"))
   
-# Additional fuel typing layers available but not yet explored:
-# SHRB_HT, SHRB_CC, HERB_TYPE, HERB_COVER, HERB_PCT, #NON_VEG_1, 
-# N_LOG_DATE, DEAD_PCT, HRVSTDT, SITE_INDEX, PROJ_HT_1, #SPEC_AGE_1, 
-# DEAD_PCT, STEM_HA_CD, DEAD_STEMS, NVEG_COV_1)
 wotton_fuel_class = vri |>
   mutate(fuel_type = case_when((BCLCS_LEVE != "V") ~ 0,
   (BCLCS_LEVE == "V" & BCLCS_LE_3 == "TB") ~ 1, 
@@ -553,7 +561,7 @@ tmap::tm_shape(Wotton_fuel_SP) + tm_polygons(fill = "darkgreen", lwd=0)
 #| error: false
 #| comment: NA
 #| echo: false
-#| eval: true
+#| eval: false
 
 density = sf::st_read("./assets/VRI/density.shp", quiet=T)
 Wotton_fuel_N = sf::st_read("./assets/VRI/Wotton_fuel_N.shp", quiet=T)
@@ -589,6 +597,14 @@ tmap::tm_shape(Wotton_fuel_SP) + tm_polygons(fill = "darkgreen", lwd=0) +
   tmap::tm_scale_bar(c(0, 10, 20, 40), position = c("RIGHT", "BOTTOM"), text.size = .5) +
   tmap::tm_title("Spruce-Stand Fuel")
 ```
+
++:---------------------------------------------------------------------------------------------------------------------------------:+:---------------------------------------------------------------------------------------------------------------------------------:+
+| ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/wooton-fuel-n.png){width="345"}  | ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/wotton-fuel-pi.png){width="345"} |
++-----------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
+| ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/wotton-fuel-hw.png){width="345"} | ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/wotton-fuel-df.png){width="346"} |
++-----------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
+| ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/wotton-fuel-mw.png){width="345"} | ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/wotton-fuel-sp.png){width="345"} |
++-----------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
 
 #### Derive Fire Weather Maps
 
@@ -627,12 +643,13 @@ terra::writeRaster(fwi_outputs, "./assets/TIF/fwi_outputs.tif", overwrite=T)
 #| message: false
 #| error: false
 #| comment: NA
-#| echo: false
-#| eval: true
+#| echo: true
+#| eval: false
 
+# Sanity check:
+#names(fwi_outputs) # => "TEMP" "RH"   "WS"   "PREC"  
+#"FFMC" "DMC"  "DC"   "ISI"  "BUI"  "FWI"  "DSR" 
 stems = sf::st_read("./assets/VRI/density.shp", quiet=T)
-fwi_outputs = terra::rast("./assets/TIF/fwi_outputs.tif")
-#names(fwi_outputs) # => "TEMP" "RH"   "WS"   "PREC" "FFMC" "DMC"  "DC"   "ISI"  "BUI"  "FWI"  "DSR" 
 
 tmap::tmap_mode("plot")
 tmap::tm_shape(fwi_outputs[["FFMC"]]) + tm_raster(style="cont", palette="inferno") + 
@@ -666,25 +683,43 @@ tmap::tm_shape(fwi_outputs[["FWI"]]) + tm_raster(style="cont", palette="inferno"
   tmap::tm_scale_bar(c(0, 10, 20, 40), position = c("RIGHT", "BOTTOM"), text.size = .5)
 ```
 
++-------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------+
+| ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/ffmc.png){width="259"} | ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/dmc.png){width="259"} | ![](assets/PNG/dc.png){width="259"}                                                                                    |
++-------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------+
+| ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/isi.png){width="259"}  | ![](assets/PNG/bui.png){width="259"}                                                                                   | ![](https://raw.githubusercontent.com/seamusrobertmurphy/forest-fire-risk-cffdrs/main/assets/PNG/fwi.png){width="259"} |
++-------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------+
+
 ```{r}
 #| warning: false
 #| message: false
 #| error: false
 #| comment: NA
 #| echo: false
-#| eval: true
-#| out.extra: "embed"
+#| eval: false
 
 stems = sf::st_read("./assets/VRI/density.shp", quiet=T)
 fwi_outputs = terra::rast("./assets/TIF/fwi_outputs.tif")
 
-tmap::tmap_mode("view")
-tmap::tm_shape(stems) + 
-  tmap::tm_polygons(fill = "density", lwd = 0) +
-  tmap::tm_shape(fwi_outputs[["DSR"]]) + 
-  tmap::tm_raster(style="cont", palette = "inferno") +
-  tmap::tm_graticules(lines=T, lwd=0.2, labels.rot=c(0,90))
+tmap::tmap_mode("plot")
+tmap::tm_shape(stems) + tmap::tm_polygons(
+	fill = "density", lwd = 0, title="Tree Density (sph)") +
+  tmap::tm_shape(fwi_outputs[["DSR"]]) + tmap::tm_raster(
+  	style="cont", palette = "inferno", title="Daily Fire Severity") +
+  tmap::tm_graticules(lines=T, lwd=0.2, labels.rot=c(0,90)) +
+  tmap::tm_title("Tip: Toggle Layers On/Off to Inspect Overlapping Layers", size=.8)
 ```
+
++:-------------------------------------------------------:+:--------------------------------------:+
+| ![Daily Fire Severity](assets/PNG/dsr.png){width="322"} | ![](assets/PNG/stems.png){width="323"} |
+|                                                         |                                        |
+| Daily Fire Severity                                     |                                        |
++---------------------------------------------------------+----------------------------------------+
+
+#### Derive Fire Prediction Maps
+
+#### Derive Fire Prediction Maps
+
+With the necessary fire weather and fuel type data prepared, the final step involves applying a stand-adjusted fine-fuel moisture content model. The following values adopted from published study by Perrakis and others [@perrakis2014] looking effects of beetle-induced tree mortality on forest fuels and fire behaviour within pine stands the southern interior of British Columbia. The core `samc` function takes the weather-based **`FFMC`** and **`DMC`** indices and adjusts them according to previously derived stand-specific predictors, including stand type and density. This final calculation provides a critical link between general climate-driven fire danger ratings and localized fire behavior predictions that account for on-the-ground forest characteristics.
 
 ```{r}
 #| warning: false
@@ -766,5 +801,208 @@ samc<-function(ffmc, dmc, stand, density, season) {
 ###### Runtime log
 
 ```{r}
+#| warning: false
+#| message: false
+#| error: false
+#| comment: NA
+#| echo: true
+#| eval: false
+
 devtools::session_info()
 ```
+
+```         
+─ Session info ──────────────────────────────────────────────────
+ setting  value
+ version  R version 4.3.0 (2023-04-21)
+ os       macOS 15.6.1
+ system   aarch64, darwin20
+ ui       RStudio
+ language (EN)
+ collate  en_US.UTF-8
+ ctype    en_US.UTF-8
+ tz       America/Vancouver
+ date     2025-09-01
+ rstudio  2024.12.1+563 Kousa Dogwood (desktop)
+ pandoc   3.6.1 @ /usr/local/bin/ (via rmarkdown)
+ quarto   1.7.33 @ /usr/local/bin/quarto
+
+─ Packages ──────────────────────────────────────────────────────
+ ! package           * version   date (UTC) lib source
+ P abind               1.4-8     2024-09-12 [?] CRAN (R 4.3.3)
+ P backports           1.5.0     2024-05-23 [?] CRAN (R 4.3.3)
+ P base64enc           0.1-3     2015-07-28 [?] CRAN (R 4.3.3)
+ P bibtex            * 0.5.1     2023-01-26 [?] CRAN (R 4.3.3)
+ P brew                1.0-10    2023-12-16 [?] CRAN (R 4.3.3)
+ P bslib               0.9.0     2025-01-30 [?] CRAN (R 4.3.3)
+ P cachem              1.1.0     2024-05-16 [?] CRAN (R 4.3.3)
+ P cartogram           0.3.0     2023-05-26 [?] CRAN (R 4.3.0)
+ P cffdrs            * 1.9.2     2025-08-22 [?] CRAN (R 4.3.0)
+ P chromote          * 0.5.1     2025-04-24 [?] CRAN (R 4.3.3)
+ P class               7.3-23    2025-01-01 [?] CRAN (R 4.3.3)
+ P classInt            0.4-11    2025-01-08 [?] CRAN (R 4.3.3)
+ P cli                 3.6.5     2025-04-23 [?] CRAN (R 4.3.3)
+ P codetools           0.2-20    2024-03-31 [?] CRAN (R 4.3.1)
+ P colorspace          2.1-1     2024-07-26 [?] CRAN (R 4.3.3)
+ P cols4all          * 0.9       2025-08-28 [?] CRAN (R 4.3.0)
+ P coro                1.1.0     2024-11-05 [?] CRAN (R 4.3.3)
+ P crosstalk           1.2.2     2025-08-26 [?] CRAN (R 4.3.0)
+ P curl              * 7.0.0     2025-08-19 [?] CRAN (R 4.3.0)
+ P data.table          1.17.8    2025-07-10 [?] CRAN (R 4.3.3)
+ P DBI                 1.2.3     2024-06-02 [?] CRAN (R 4.3.3)
+ P deldir              2.0-4     2024-02-28 [?] CRAN (R 4.3.3)
+ P devtools          * 2.4.5     2022-10-11 [?] CRAN (R 4.3.0)
+ P dichromat           2.0-0.1   2022-05-02 [?] CRAN (R 4.3.3)
+ P digest              0.6.37    2024-08-19 [?] CRAN (R 4.3.3)
+ P doParallel          1.0.17    2022-02-07 [?] CRAN (R 4.3.3)
+ P dplyr             * 1.1.4     2023-11-17 [?] CRAN (R 4.3.1)
+ P e1071               1.7-16    2024-09-16 [?] CRAN (R 4.3.3)
+ P elevatr           * 0.99.0    2023-09-12 [?] CRAN (R 4.3.0)
+ P ellipsis            0.3.2     2021-04-29 [?] CRAN (R 4.3.3)
+ P ellmer            * 0.3.1     2025-08-24 [?] CRAN (R 4.3.0)
+ P evaluate            1.0.5     2025-08-27 [?] CRAN (R 4.3.0)
+ P farver              2.1.2     2024-05-13 [?] CRAN (R 4.3.3)
+ P fastmap             1.2.0     2024-05-15 [?] CRAN (R 4.3.3)
+ P FNN                 1.1.4.1   2024-09-22 [?] CRAN (R 4.3.3)
+ P foreach             1.5.2     2022-02-02 [?] CRAN (R 4.3.3)
+ P fs                  1.6.6     2025-04-12 [?] CRAN (R 4.3.3)
+ P generics            0.1.4     2025-05-09 [?] CRAN (R 4.3.3)
+ P geonetwork        * 0.6.0     2025-07-23 [?] CRAN (R 4.3.0)
+ P ggplot2           * 3.5.2     2025-04-09 [?] CRAN (R 4.3.3)
+ P glue                1.8.0     2024-09-30 [?] CRAN (R 4.3.3)
+ P gstat             * 2.1-4     2025-07-10 [?] CRAN (R 4.3.3)
+ P gtable              0.3.6     2024-10-25 [?] CRAN (R 4.3.3)
+ P hexbin              1.28.5    2024-11-13 [?] CRAN (R 4.3.3)
+ P htmltools         * 0.5.8.1   2024-04-04 [?] CRAN (R 4.3.3)
+ P htmlwidgets         1.6.4     2023-12-06 [?] CRAN (R 4.3.1)
+ P httpuv              1.6.16    2025-04-16 [?] CRAN (R 4.3.3)
+ P httr2             * 1.2.1     2025-07-22 [?] CRAN (R 4.3.0)
+ P igraph              2.1.4     2025-01-23 [?] CRAN (R 4.3.3)
+ P interp              1.1-6     2024-01-26 [?] CRAN (R 4.3.3)
+ P intervals           0.15.5    2024-08-23 [?] CRAN (R 4.3.3)
+ P iterators           1.0.14    2022-02-05 [?] CRAN (R 4.3.3)
+ P janitor           * 2.2.1     2024-12-22 [?] CRAN (R 4.3.3)
+ P jpeg                0.1-11    2025-03-21 [?] CRAN (R 4.3.3)
+ P jquerylib           0.1.4     2021-04-26 [?] CRAN (R 4.3.3)
+ P jsonlite            2.0.0     2025-03-27 [?] CRAN (R 4.3.3)
+ P kableExtra        * 1.4.0     2024-01-24 [?] CRAN (R 4.3.1)
+ P KernSmooth          2.23-26   2025-01-01 [?] CRAN (R 4.3.3)
+ P knitr             * 1.50      2025-03-16 [?] CRAN (R 4.3.3)
+ P later               1.4.4     2025-08-27 [?] CRAN (R 4.3.0)
+ P lattice           * 0.22-7    2025-04-02 [?] CRAN (R 4.3.3)
+ P latticeExtra        0.6-30    2022-07-04 [?] CRAN (R 4.3.3)
+ P leafem              0.2.5     2025-08-28 [?] CRAN (R 4.3.0)
+ P leaflegend          1.2.1     2024-05-09 [?] CRAN (R 4.3.3)
+ P leaflet             2.2.2     2024-03-26 [?] CRAN (R 4.3.1)
+ P leaflet.providers   2.0.0     2023-10-17 [?] CRAN (R 4.3.3)
+ P leafpop             0.1.0     2021-05-22 [?] CRAN (R 4.3.0)
+ P leafsync            0.1.0     2019-03-05 [?] CRAN (R 4.3.0)
+ P lifecycle           1.0.4     2023-11-07 [?] CRAN (R 4.3.3)
+ P logger              0.4.0     2024-10-22 [?] CRAN (R 4.3.3)
+ P lubridate           1.9.4     2024-12-08 [?] CRAN (R 4.3.3)
+ P lutz              * 0.3.2     2023-10-17 [?] CRAN (R 4.3.3)
+ P lwgeom              0.2-14    2024-02-21 [?] CRAN (R 4.3.1)
+ P magrittr            2.0.3     2022-03-30 [?] CRAN (R 4.3.3)
+ P mapedit           * 0.7.0     2025-04-20 [?] CRAN (R 4.3.3)
+ P maptiles            0.10.0    2025-05-07 [?] CRAN (R 4.3.3)
+ P mapview             2.11.3    2025-08-28 [?] CRAN (R 4.3.0)
+ P memoise             2.0.1     2021-11-26 [?] CRAN (R 4.3.3)
+ P mime                0.13      2025-03-17 [?] CRAN (R 4.3.3)
+ P miniUI              0.1.2     2025-04-17 [?] CRAN (R 4.3.3)
+ P ncdf4             * 1.24      2025-03-25 [?] CRAN (R 4.3.3)
+ P OpenStreetMap     * 0.4.0     2023-10-12 [?] CRAN (R 4.3.1)
+ P openxlsx          * 4.2.8     2025-01-25 [?] CRAN (R 4.3.3)
+ P osmdata           * 0.3.0     2025-08-23 [?] CRAN (R 4.3.0)
+ P packcircles         0.3.7     2024-11-21 [?] CRAN (R 4.3.3)
+ P pacman              0.5.1     2019-03-11 [?] CRAN (R 4.3.3)
+   pandoc            * 0.2.0     2023-08-24 [1] CRAN (R 4.3.3)
+ P pandocfilters     * 0.1-6     2022-08-11 [?] CRAN (R 4.3.3)
+ P pillar              1.11.0    2025-07-04 [?] CRAN (R 4.3.3)
+ P pkgbuild            1.4.8     2025-05-26 [?] CRAN (R 4.3.3)
+ P pkgconfig           2.0.3     2019-09-22 [?] CRAN (R 4.3.3)
+ P pkgload             1.4.0     2024-06-28 [?] CRAN (R 4.3.3)
+ P plyr                1.8.9     2023-10-02 [?] CRAN (R 4.3.3)
+ P png                 0.1-8     2022-11-29 [?] CRAN (R 4.3.3)
+ P processx            3.8.6     2025-02-21 [?] CRAN (R 4.3.3)
+ P profvis             0.4.0     2024-09-20 [?] CRAN (R 4.3.3)
+ P progressr           0.15.1    2024-11-22 [?] CRAN (R 4.3.3)
+ P PROJ              * 0.6.0     2025-04-03 [?] CRAN (R 4.3.3)
+ P proj4               1.0-15    2025-03-21 [?] CRAN (R 4.3.3)
+ P promises            1.3.3     2025-05-29 [?] CRAN (R 4.3.3)
+ P proxy               0.4-27    2022-06-09 [?] CRAN (R 4.3.3)
+ P ps                  1.9.1     2025-04-12 [?] CRAN (R 4.3.3)
+ P purrr               1.1.0     2025-07-10 [?] CRAN (R 4.3.0)
+ P R6                  2.6.1     2025-02-15 [?] CRAN (R 4.3.3)
+ P rappdirs            0.3.3     2021-01-31 [?] CRAN (R 4.3.3)
+ P raster            * 3.6-32    2025-03-28 [?] CRAN (R 4.3.3)
+ P rasterVis         * 0.51.6    2023-11-01 [?] CRAN (R 4.3.3)
+ P RColorBrewer        1.1-3     2022-04-03 [?] CRAN (R 4.3.3)
+ P Rcpp                1.1.0     2025-07-02 [?] CRAN (R 4.3.3)
+ P remotes             2.5.0     2024-03-17 [?] CRAN (R 4.3.3)
+   renv              * 1.1.5     2025-07-24 [1] CRAN (R 4.3.0)
+ P reproj            * 0.7.0     2024-06-11 [?] CRAN (R 4.3.3)
+ P rJava               1.0-11    2024-01-26 [?] CRAN (R 4.3.3)
+ P rlang               1.1.6     2025-04-11 [?] CRAN (R 4.3.3)
+ P rmapshaper        * 0.5.0     2023-04-11 [?] CRAN (R 4.3.0)
+ P rmarkdown         * 2.29      2024-11-04 [?] CRAN (R 4.3.3)
+ P rstudioapi          0.17.1    2024-10-22 [?] CRAN (R 4.3.3)
+ P s2                  1.1.9     2025-05-23 [?] CRAN (R 4.3.3)
+ P S7                  0.2.0     2024-11-07 [?] CRAN (R 4.3.3)
+ P sass                0.4.10    2025-04-11 [?] CRAN (R 4.3.3)
+ P satellite           1.0.6     2025-08-21 [?] CRAN (R 4.3.0)
+ P scales              1.4.0     2025-04-24 [?] CRAN (R 4.3.3)
+ P sessioninfo         1.2.3     2025-02-05 [?] CRAN (R 4.3.3)
+ P sf                * 1.0-22    2025-08-25 [?] Github (r-spatial/sf@3660edf)
+ P shiny               1.11.1    2025-07-03 [?] CRAN (R 4.3.3)
+ P shinyWidgets        0.9.0     2025-02-21 [?] CRAN (R 4.3.3)
+ P snakecase           0.11.1    2023-08-27 [?] CRAN (R 4.3.0)
+ P sp                * 2.2-0     2025-02-01 [?] CRAN (R 4.3.3)
+ P spacesXYZ           1.6-0     2025-06-06 [?] CRAN (R 4.3.3)
+ P spacetime           1.3-3     2025-02-13 [?] CRAN (R 4.3.3)
+ P stars               0.6-8     2025-02-01 [?] CRAN (R 4.3.3)
+ P stringi             1.8.7     2025-03-27 [?] CRAN (R 4.3.3)
+ P stringr             1.5.1     2023-11-14 [?] CRAN (R 4.3.1)
+ P svglite             2.2.1     2025-05-12 [?] CRAN (R 4.3.3)
+ P systemfonts         1.2.3     2025-04-30 [?] CRAN (R 4.3.3)
+ P terra             * 1.8-60    2025-07-21 [?] CRAN (R 4.3.0)
+ P textshaping         1.0.1     2025-05-01 [?] CRAN (R 4.3.3)
+ P tibble              3.3.0     2025-06-08 [?] CRAN (R 4.3.3)
+ P tidyselect          1.2.1     2024-03-11 [?] CRAN (R 4.3.1)
+ P timechange          0.3.0     2024-01-18 [?] CRAN (R 4.3.3)
+ P tinytex           * 0.57      2025-04-15 [?] CRAN (R 4.3.3)
+   tmap              * 4.1       2025-05-12 [1] CRAN (R 4.3.3)
+   tmap.cartogram    * 0.2       2025-05-14 [1] CRAN (R 4.3.3)
+   tmap.glyphs       * 0.1       2025-05-30 [1] CRAN (R 4.3.3)
+   tmap.networks     * 0.1       2025-05-30 [1] CRAN (R 4.3.3)
+ P tmaptools         * 3.2       2025-01-13 [?] CRAN (R 4.3.3)
+ P units               0.8-7     2025-03-11 [?] CRAN (R 4.3.3)
+ P urlchecker          1.0.1     2021-11-30 [?] CRAN (R 4.3.3)
+ P useful            * 1.2.6.1   2023-10-24 [?] CRAN (R 4.3.1)
+ P usethis           * 3.2.0     2025-08-28 [?] CRAN (R 4.3.0)
+ P uuid                1.2-1     2024-07-29 [?] CRAN (R 4.3.3)
+ P V8                  6.0.6     2025-08-18 [?] CRAN (R 4.3.0)
+ P vctrs               0.6.5     2023-12-01 [?] CRAN (R 4.3.3)
+ P viridisLite         0.4.2     2023-05-02 [?] CRAN (R 4.3.3)
+ P weathercan        * 0.7.5     2025-08-26 [?] https://ropensci.r-universe.dev (R 4.3.0)
+ P websocket           1.4.4     2025-04-10 [?] CRAN (R 4.3.3)
+ P withr               3.0.2     2024-10-28 [?] CRAN (R 4.3.3)
+ P wk                  0.9.4     2024-10-11 [?] CRAN (R 4.3.3)
+ P xfun                0.53      2025-08-19 [?] CRAN (R 4.3.0)
+ P XML                 3.99-0.18 2025-01-01 [?] CRAN (R 4.3.3)
+ P xml2                1.4.0     2025-08-20 [?] CRAN (R 4.3.0)
+ P xtable              1.8-4     2019-04-21 [?] CRAN (R 4.3.3)
+ P xts                 0.14.1    2024-10-15 [?] CRAN (R 4.3.3)
+ P yaml                2.3.10    2024-07-26 [?] CRAN (R 4.3.3)
+ P zip                 2.3.3     2025-05-13 [?] CRAN (R 4.3.3)
+ P zoo                 1.8-14    2025-04-10 [?] CRAN (R 4.3.3)
+
+ [1] /Users/seamus/repos/forest-fire-risk-cffdrs/renv/library/R-4.3/aarch64-apple-darwin20
+ [2] /Users/seamus/Library/Caches/org.R-project.R/R/renv/sandbox/R-4.3/aarch64-apple-darwin20/ac5c2659
+
+ * ── Packages attached to the search path.
+ P ── Loaded and on-disk path mismatch.
+
+─────────────────────────────────────────────────────────────────
+```
+
+[^1]: Additional fuel typing layers available in VRI datasets that are yet under-explored/lacking research: SHRB_HT, SHRB_CC, HERB_TYPE, HERB_COVER, HERB_PCT, NON_VEG_1, N_LOG_DATE, DEAD_PCT, HRVSTDT, SITE_INDEX, PROJ_HT_1, #SPEC_AGE_1, DEAD_PCT, STEM_HA_CD, DEAD_STEMS, NVEG_COV_1)
